@@ -14,13 +14,14 @@ public class ProductService(IGeneric<Product> productInterface,IMapper mapper) :
         var mappedData = mapper.Map<Product>(product);
 
         int result = await productInterface.AddAsync(mappedData);
-        return result > 0 ? new ServiceResponse(true, "Product Added Successfully")
-         : new ServiceResponse(false, "Failed To Add Product !");
+            return result > 0 ? new ServiceResponse(true, "Product Added Successfully")
+            : new ServiceResponse(false, "Failed To Add Product !");
     }
 
     public async Task<ServiceResponse> DeleteAsync(Guid id)
     {
         int result = await productInterface.DeleteAsync(id);
+
         return result > 0 ? new ServiceResponse(true, "Product Removed Successfully")
             : new ServiceResponse(false, "Failed To Delete Product !");
     }

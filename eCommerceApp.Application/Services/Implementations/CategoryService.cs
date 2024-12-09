@@ -22,6 +22,8 @@ public class CategoryService(IGeneric<Category> categoryInterface , IMapper mapp
     public async Task<ServiceResponse> DeleteAsync(Guid id)
     {
         int result = await categoryInterface.DeleteAsync(id);
+      
+
         return result > 0 ? new ServiceResponse(true, "Category Removed Successfully")
             : new ServiceResponse(false, "Failed To Delete Category !");
     }
