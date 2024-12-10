@@ -1,6 +1,8 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using eCommerceApp.Application.Services.Interfaces.Logging;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace eCommerceApp.Infrastructure.Middleware;
 
@@ -14,9 +16,12 @@ public class ExceptionHandlingMiddleware(RequestDelegate _next)
         }
         catch(DbUpdateException ex) 
         {
+            var logger = context.RequestServices.GetRequiredService<IAppLogger<ExceptionHandlingMiddleware>>();
+
             context.Response.ContentType = "application/json";
             if (ex.InnerException is SqlException innerException)
             {
+                logger.LogError(innerException, "Sql Exception");
                 switch (innerException.Number)
                 {
                     case 2627: // unique constraint violation
@@ -40,12 +45,17 @@ public class ExceptionHandlingMiddleware(RequestDelegate _next)
             }
             else
             {
+                logger.LogError(ex, "EFCore Related Exception");
+
                 context.Response.StatusCode = StatusCodes.Status500InternalServerError;
                 await context.Response.WriteAsync("An Error Occurred : " + ex.Message);
             }
         }
         catch(Exception ex)
         {
+            var logger = context.RequestServices.GetRequiredService<IAppLogger<ExceptionHandlingMiddleware>>();
+            logger.LogError(ex, "Unknown Exception");
+
             context.Response.ContentType = "application/json";
             context.Response.StatusCode = StatusCodes.Status500InternalServerError;
             await context.Response.WriteAsync("An Error Occurred : " + ex.Message);
