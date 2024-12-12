@@ -10,8 +10,8 @@ public class CreateUserValidator :AbstractValidator<CreateUser>
         RuleFor(x => x.FullName)
             .NotEmpty().WithMessage("FullName Is Required .");
 
-        RuleFor(x => x.FullName)
-            .NotEmpty().WithMessage("FullName Is Required .")
+        RuleFor(x => x.Email)
+            .NotEmpty().WithMessage("Email Is Required .")
             .EmailAddress().WithMessage("Invalid Email Format .");
 
         RuleFor(x => x.Password)

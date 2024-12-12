@@ -2,68 +2,93 @@
 using eCommerceApp.Domain.Interfaces.Authentication;
 using eCommerceApp.Infrastructure.Data;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using System.Security.Claims;
 
-namespace eCommerceApp.Infrastructure.Repositories.Authentication;
-
-public class UserManagement
-    (
-    IRoleManagement roleManagement
-    ,UserManager<AppUser> userManager
-    ,AppDbContext context
-    ) 
-    : IUserManagement
+namespace eCommerceApp.Infrastructure.Repositories.Authentication
 {
-    public async Task<bool> CreateUser(AppUser user)
+    public class UserManagement : IUserManagement
     {
-        AppUser? _user = await GetUserByEmail(user.Email!);
-        if (user != null) return false;
+        private readonly IRoleManagement _roleManagement;
+        private readonly UserManager<AppUser> _userManager;
+        private readonly AppDbContext _context;
+        private readonly ILogger<UserManagement> _logger;
 
-        return (await userManager.CreateAsync(user!, user!.PasswordHash!)).Succeeded;
-    }
+        public UserManagement(
+            IRoleManagement roleManagement,
+            UserManager<AppUser> userManager,
+            AppDbContext context,
+            ILogger<UserManagement> logger
+        )
+        {
+            _roleManagement = roleManagement;
+            _userManager = userManager;
+            _context = context;
+            _logger = logger;
+        }
 
-    public async Task<IEnumerable<AppUser>?> GetAllUsers() => await context.Users.ToListAsync();
-   
+        public async Task<bool> CreateUser(AppUser user, string rawPassword)
+        {
+            var _user = await GetUserByEmail(user.Email!);
+            if (_user != null) return false;
 
-    public async Task<AppUser?> GetUserByEmail(string email) => await userManager.FindByEmailAsync(email);
+            var result = await _userManager.CreateAsync(user, rawPassword);
 
+            if (!result.Succeeded)
+            {
+                foreach (var error in result.Errors)
+                {
+                    _logger.LogError($"Error creating user: {error.Description}");
+                }
+                return false;
+            }
 
-    public async Task<AppUser> GetUserById(string id)
-    {
-        var user =  await userManager.FindByIdAsync(id);
-        return user!;
-    }
+            return true;
+        }
 
-    public async Task<List<Claim>> GetUserClaims(string email)
-    {
-        var _user = await GetUserByEmail(email);
-        string? roleName = await roleManagement.GetUserRole(_user!.Email!);
+        public async Task<List<AppUser>> GetAllUsers() => await _context.Users.ToListAsync();
 
-        List<Claim> claims = 
-            [
-                new Claim("FullName",_user!.FullName),
-                new Claim(ClaimTypes.NameIdentifier,_user!.Id),
-                new Claim(ClaimTypes.Email,_user!.Email!),
-                new Claim(ClaimTypes.Role,roleName!),
-            ];
-        return claims;
-    }
+        public async Task<AppUser?> GetUserByEmail(string email) => await _userManager.FindByEmailAsync(email);
 
-    public async Task<bool> LoginUser(AppUser user)
-    {
-        var _user = await GetUserByEmail(user.Email!);
-        if (_user is null) return false;
+        public async Task<AppUser> GetUserById(string id)
+        {
+            var user = await _userManager.FindByIdAsync(id);
+            return user!;
+        }
 
-        string? roleName = await roleManagement.GetUserRole(_user!.Email!);
-        if (string.IsNullOrEmpty(roleName)) return false;
+        public async Task<List<Claim>> GetUserClaims(string email)
+        {
+            var _user = await GetUserByEmail(email);
+            string? roleName = await _roleManagement.GetUserRole(_user!.Email!);
 
-        return await userManager.CheckPasswordAsync(_user, user.PasswordHash!);
-    }
+            return new List<Claim>
+            {
+                new Claim("FullName", _user!.FullName),
+                new Claim(ClaimTypes.NameIdentifier, _user!.Id),
+                new Claim(ClaimTypes.Email, _user!.Email!),
+                new Claim(ClaimTypes.Role, roleName!),
+            };
+        }
 
-    public async Task<int> RemoveUserByEmail(string email)
-    {
-        var user = await context.Users.FirstOrDefaultAsync(_ => _.Email == email);
-        context.Users.Remove(user);
-        return await context.SaveChangesAsync();
+        public async Task<bool> LoginUser(AppUser user, string rawPassword)
+        {
+            var _user = await GetUserByEmail(user.Email!);
+            if (_user is null) return false;
+
+            string? roleName = await _roleManagement.GetUserRole(_user.Email!);
+            if (string.IsNullOrEmpty(roleName)) return false;
+
+            return await _userManager.CheckPasswordAsync(_user, rawPassword);
+        }
+
+        public async Task<int> RemoveUserByEmail(string email)
+        {
+            var user = await _context.Users.FirstOrDefaultAsync(_ => _.Email == email);
+            if (user is null) return 0;
+
+            _context.Users.Remove(user);
+            return await _context.SaveChangesAsync();
+        }
     }
 }
