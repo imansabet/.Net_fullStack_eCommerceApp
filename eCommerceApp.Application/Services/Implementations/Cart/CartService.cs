@@ -13,7 +13,7 @@ public class CartService
     (ICart cartInterface ,IMapper mapper , IPaymentService paymentService,
     IPaymentMethodService  paymentMethodService,IGeneric<Product> productInterface) : ICartService
 {
-    public async Task<ServiceResponse> Checkout(Checkout checkout, string userId)
+    public async Task<ServiceResponse> Checkout(Checkout checkout)
     {
         var (products, totalAmount) = await GetCartTotalAmount(checkout.Carts);
         var paymentMethods = await paymentMethodService.GetPaymentMethods();
