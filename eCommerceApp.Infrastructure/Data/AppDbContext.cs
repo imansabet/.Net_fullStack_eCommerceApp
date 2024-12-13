@@ -13,6 +13,7 @@ public class AppDbContext(DbContextOptions options) : IdentityDbContext<AppUser>
     public DbSet<Category> Categories { get; set; }
     public DbSet<RefreshToken> RefreshToken { get; set; }
     public DbSet<PaymentMethod> PaymentMethods { get; set; }
+    public DbSet<Achieve> CheckoutAchieves { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
