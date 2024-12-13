@@ -71,7 +71,13 @@ public class AuthenticationService
         string jwtToken = tokenManagement.GenerateToken(claims);
         string refreshToken = tokenManagement.GetRefreshToken();
 
-        int saveTokenResult = await tokenManagement.AddRefreshToken(_user.Id, refreshToken);
+        int saveTokenResult = 0;
+        var checkUserToken = await tokenManagement.ValidateRefreshToken(refreshToken);
+        if(checkUserToken)
+            saveTokenResult =  await tokenManagement.UpdateRefreshToken(_user.Id, refreshToken);
+        else
+            saveTokenResult = await tokenManagement.AddRefreshToken(_user.Id, refreshToken);
+
         return saveTokenResult <= 0
             ? new LoginResponse(Message: "Internal Error Occurred While Authenticating")
             : new LoginResponse(Success: true, Token: jwtToken, RefreshToken: refreshToken);

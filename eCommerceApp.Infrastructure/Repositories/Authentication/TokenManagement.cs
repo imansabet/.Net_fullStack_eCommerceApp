@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
+using System.Net;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
@@ -46,7 +47,8 @@ public class TokenManagement(AppDbContext context,IConfiguration config) : IToke
         {
             rng.GetBytes(randomeBytes);
         }
-        return Convert.ToBase64String(randomeBytes);
+        string token =  Convert.ToBase64String(randomeBytes);
+        return WebUtility.UrlEncode(token);
     }
 
     public List<Claim> GetUserClaimsFromToken(string token)
