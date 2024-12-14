@@ -11,4 +11,5 @@ public interface ICategoryService
     Task<ServiceResponse> AddAsync(CreateCategory category);
     Task<ServiceResponse> UpdateAsync(UpdateCategory category);
     Task<ServiceResponse> DeleteAsync(Guid id);
+    Task<IEnumerable<GetProduct>> GetProductsByCategory(Guid categoryId);
 }

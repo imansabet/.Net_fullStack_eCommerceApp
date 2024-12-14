@@ -54,4 +54,12 @@ public class CategoryController(ICategoryService categoryService) : ControllerBa
         return result.Success ? Ok(result) : BadRequest(result);
 
     }
+
+    [HttpGet("products-by-category/{categoryId}")]
+    public async Task<IActionResult> GetProductsByCategory(Guid categoryId)
+    {
+        var results = await categoryService.GetProductsByCategory(categoryId);
+        return results.Any() ? Ok(results) : NotFound();
+         
+    }
 }
